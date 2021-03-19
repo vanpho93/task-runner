@@ -6,7 +6,7 @@ import './models/task.hook'
 import { TaskManager } from './task-manager'
 
 app.mongoose.connect(
-  'mongodb://localhost:27017/slowie1000',
+  process.env.DATABASE_URL as string,
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -18,7 +18,7 @@ app.mongoose.connect(
 const server = app.getServer()
 
 async function start() {
-  const { url } = await server.listen(3000)
+  const { url } = await server.listen(process.env.PORT || 3000)
   console.log(`🚀  Server ready at ${url}`)
   TaskManager.loadTasksOnInit()
 }
