@@ -1,17 +1,38 @@
 import * as _ from 'lodash'
+import { Schema } from 'mongoose'
+import { isValidCron } from 'cron-validator'
 import * as scalars from 'graphql-scalars'
+
 import { ITask } from './task.interface'
-import { graphql, IField } from 'slowie'
+import { ApolloServer, graphql, IField } from 'slowie'
 import { app, IContext } from '../app'
 import { builtInFields } from './shared'
+import { EProcessorName } from '../processors/metadata'
+
+const processorEnum = new graphql.GraphQLEnumType({
+  name: 'Processor',
+  values: {
+      HEALTH_CHECK: { value: EProcessorName.HEALTH_CHECK },
+      ALWAYS_FAIL: { value: EProcessorName.ALWAYS_FAIL },
+      SAVE_LOG_TO_FILE: { value: EProcessorName.SAVE_LOG_TO_FILE },
+      GENERATE_DAILY_REPORT: { value: EProcessorName.GENERATE_DAILY_REPORT },
+  },
+})
 
 const processor: IField<IContext, string> = {
   graphql: {
-    default: { type: graphql.GraphQLString },
-    create: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    default: { type: processorEnum },
+    create: { type: graphql.GraphQLNonNull(processorEnum) },
     update: null,
   },
   db: { type: String },
+}
+
+const paused: IField<IContext, boolean> = {
+  graphql: {
+    read: { type: graphql.GraphQLBoolean },
+  },
+  db: { type: Boolean, required: true, default: false },
 }
 
 const input: IField<IContext, string> = {
@@ -20,14 +41,7 @@ const input: IField<IContext, string> = {
     create: { type: graphql.GraphQLNonNull(scalars.GraphQLJSONObject) },
     update: null,
   },
-  db: { type: String },
-}
-
-const timeCount: IField<IContext, number> = {
-  graphql: {
-    default: { type: graphql.GraphQLInt },
-  },
-  db: { type: Number },
+  db: { type: Schema.Types.Mixed },
 }
 
 const runnedTime: IField<IContext, number> = {
@@ -39,24 +53,26 @@ const runnedTime: IField<IContext, number> = {
 
 const scheduledAt: IField<IContext, string> = {
   graphql: {
-    default: { type: graphql.GraphQLString },
+    read: { type: graphql.GraphQLString },
     create: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+  },
+  validate: (_context, value) => {
+    if (isValidCron(value, { seconds: true })) return
+    throw new ApolloServer.UserInputError('INVALID_CRON_DESCRIPTION')
   },
   db: { type: String, required: true },
 }
 
 const issuedAt: IField<IContext, string> = {
   graphql: {
-    default: { type: graphql.GraphQLString },
-    create: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    default: { type: scalars.DateTimeResolver },
   },
-  db: { type: Date, required: true },
+  db: { type: Date, required: true, default: Date.now },
 }
 
 const expiredAt: IField<IContext, string> = {
   graphql: {
-    default: { type: graphql.GraphQLString },
-    create: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    default: { type: scalars.DateTimeResolver },
   },
   db: { type: Date },
 }
@@ -67,11 +83,11 @@ export const Task = app.createModel<ITask>({
     _id: builtInFields.id,
     processor,
     input,
-    timeCount,
     runnedTime,
     scheduledAt,
     issuedAt,
     expiredAt,
+    paused,
   },
 })
 

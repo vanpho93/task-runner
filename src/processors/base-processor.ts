@@ -6,36 +6,38 @@ import { EProcessorName, IProcessor } from './metadata'
 export abstract class BaseProcessor<Input, Output> implements IProcessor<Input> {
   abstract name: EProcessorName
 
-  validateInput(): Promise<void> | void {
-    //
-  }
+  validateInput(_input: Input): Promise<void> | void {}
 
-  abstract doJob(): Promise<Output>
+  abstract doJob(task: ITask<Input>): Promise<Output>
 
   private get TaskResult() { return app.getModel('TaskResult') }
 
   async run(task: ITask<Input>) {
-    await this.validateInput()
+    await this.validateInput(task.input)
     const taskResult = await this.TaskResult.create({
       taskId: task._id,
       input: task.input,
     })
     try {
-      const output = await this.doJob()
+      const output = await this.doJob(task)
       await this.onSuccess(taskResult, output)
     } catch (error) {
       await this.onFailed(taskResult, error)
     }
   }
 
-  private onSuccess(taskResult: Document, output: Output) {
-    return this.TaskResult.findByIdAndUpdate(
+  private async onSuccess(taskResult: Document, output: Output) {
+    await this.TaskResult.findByIdAndUpdate(
       taskResult._id,
       {
         output,
         success: true,
         finishedAt: new Date(),
       }
+    )
+    await app.getModel('Task').findByIdAndUpdate(
+      taskResult['taskId'],
+      { $set: { runnedTime: { $inc: 1 } } }
     )
   }
 

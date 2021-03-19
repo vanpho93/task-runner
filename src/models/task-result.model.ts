@@ -1,6 +1,8 @@
 import * as _ from 'lodash'
-import { ITaskResult } from './task-result.interface'
+import * as scalars from 'graphql-scalars'
+import { Schema } from 'mongoose'
 import { graphql, IField, EDefaultApis } from 'slowie'
+import { ITaskResult } from './task-result.interface'
 import { app, IContext } from '../app'
 import { builtInFields } from './shared'
 
@@ -15,16 +17,16 @@ const processor: IField<IContext, string> = {
 
 const input: IField<IContext, string> = {
   graphql: {
-    read: { type: graphql.GraphQLString },
+    read: { type: scalars.GraphQLJSONObject },
   },
-  db: { type: String },
+  db: { type: Schema.Types.Mixed },
 }
 
 const output: IField<IContext, string> = {
   graphql: {
-    read: { type: graphql.GraphQLString },
+    read: { type: scalars.GraphQLJSONObject },
   },
-  db: { type: String },
+  db: { type: Schema.Types.Mixed },
 }
 
 const error: IField<IContext, string> = {
@@ -36,23 +38,23 @@ const error: IField<IContext, string> = {
 
 const startedAt: IField<IContext, number> = {
   graphql: {
-    read: { type: graphql.GraphQLInt },
+    read: { type: scalars.DateTimeResolver },
   },
-  db: { type: Date, default: () => new Date() },
+  db: { type: Date, default: Date.now },
 }
 
 const finishedAt: IField<IContext, number> = {
   graphql: {
-    read: { type: graphql.GraphQLInt },
+    read: { type: scalars.DateTimeResolver },
   },
   db: { type: Date },
 }
 
-const sucess: IField<IContext, boolean> = {
+const success: IField<IContext, boolean> = {
   graphql: {
     read: { type: graphql.GraphQLBoolean },
   },
-  db: { type: Boolean, required: true, default: false },
+  db: { type: Boolean },
 }
 
 export const TaskResult = app.createModel<ITaskResult<any, any>>({
@@ -65,7 +67,7 @@ export const TaskResult = app.createModel<ITaskResult<any, any>>({
     error,
     startedAt,
     finishedAt,
-    sucess,
+    success,
   },
   hideDefaultApis: [
     EDefaultApis.CREATE,

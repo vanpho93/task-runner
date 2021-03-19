@@ -5,6 +5,6 @@ export interface ITask<Input = any> {
   runnedTime: number
   scheduledAt: string
   paused: boolean
-  expiredAt: Date
+  expiredAt?: Date
   issuedAt: Date
 }
