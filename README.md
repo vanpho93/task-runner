@@ -80,6 +80,20 @@ mutation {
 }
 ```
 
+### Pause a task
+
+```graphql
+mutation {
+  updateTask(
+    _id:"ace50968ea3a0b9f",
+    input: { paused: true }
+  ) {
+    _id
+    processor
+  }
+}
+```
+
 ### List task results
 
 ```graphql

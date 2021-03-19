@@ -8,16 +8,9 @@ import { ApolloServer, graphql, IField } from 'slowie'
 import { app, IContext } from '../app'
 import { builtInFields } from './shared'
 import { EProcessorName } from '../processors/metadata'
+import { createEnumType } from '../helper'
 
-const processorEnum = new graphql.GraphQLEnumType({
-  name: 'Processor',
-  values: {
-      HEALTH_CHECK: { value: EProcessorName.HEALTH_CHECK },
-      ALWAYS_FAIL: { value: EProcessorName.ALWAYS_FAIL },
-      SAVE_LOG_TO_FILE: { value: EProcessorName.SAVE_LOG_TO_FILE },
-      GENERATE_DAILY_REPORT: { value: EProcessorName.GENERATE_DAILY_REPORT },
-  },
-})
+const processorEnum = createEnumType('Processor', EProcessorName)
 
 const processor: IField<IContext, string> = {
   graphql: {
@@ -30,7 +23,7 @@ const processor: IField<IContext, string> = {
 
 const paused: IField<IContext, boolean> = {
   graphql: {
-    read: { type: graphql.GraphQLBoolean },
+    default: { type: graphql.GraphQLBoolean },
   },
   db: { type: Boolean, required: true, default: false },
 }
